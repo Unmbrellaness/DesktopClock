@@ -13,7 +13,7 @@
 
 // *********************  define块
 // 测试HTTP请求用的URL。注意网址前面必须添加"http://"
-#define URL_WEATHER "https://api.seniverse.com/v3/weather/now.json?key=S1Ol8f-mnMEd88U89&location=xian&language=zh-Hans&unit=c"
+#define URL_WEATHER "http://api.seniverse.com/v3/weather/now.json?key=S1Ol8f-mnMEd88U89&location=xian&language=zh-Hans&unit=c"
 // 完整格式：https://api.seniverse.com/v3/weather/now.json?key=S1Ol8f-mnMEd88U89&location=xian&language=zh-Hans&unit=c
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
@@ -36,8 +36,8 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT,
 
 // ********************* 全局变量块
 // 设置wifi接入信息(请根据您的WiFi信息进行修改)
-char *ssid     = "308E";
-char *password = "308308308";
+char *ssid     = "TP-LINK_DCEB";
+char *password = "12345678";
 
 // WiFiUDP ntpUDP;
 // NTPClient timeClient(ntpUDP,"europe.pool.ntp.org",60*60*8);
@@ -54,11 +54,20 @@ void setup() {
   oledInit();
   // 获取时间
   // getTime();
+  char city[10]="xian";
+  int weather=1;
+  int temp;
+  getWeatherFromXinzhi(city,&weather,&temp);
 }
 
 void loop() {
   // getTime();
   // delay(500);
+  // char city[10]="xian";
+  // int weather=1;
+  // int temp;
+  // getWeatherFromXinzhi(city,&weather,&temp);
+  // delay(1000);
 }
 
 //连接wifi
@@ -78,7 +87,7 @@ void connectWIFI(char* ssid,char* password){
   Serial.print("WiFi Connected!");
 }
 
-//获取从网络获取时间，代码不太合理，以后要改
+//获取从ds1302获取时间，代码不太合理，以后要改
 /*
 void getTime(){
   HTTPClient httpClient;
@@ -135,6 +144,8 @@ void getTime(){
 }
 */
 
+void setTime(){}
+
 //从NTP服务器获取时间，用来校准日期，未完成
 void getTimeFromNTPClient(){
   WiFiUDP ntpUDP;
@@ -163,7 +174,7 @@ void getTimeFromNTPClient(){
 
 
 //获取从心知天气api获取天气信息
-void getWeather(char* city,int *WeatherCode,int *Temperature){
+void getWeatherFromXinzhi(char* city,int *WeatherCode,int *Temperature){
 
   // //获取传入的城市的天气数据
   // char* url_weather1 = "https://api.seniverse.com/v3/weather/now.json?key=S1Ol8f-mnMEd88U89&location=" 
@@ -180,8 +191,10 @@ void getWeather(char* city,int *WeatherCode,int *Temperature){
   
   DynamicJsonDocument doc(capacity_weather);
 
-  int weatherCode;
-  int temperature;
+  // int weatherCode;
+  // int temperature;
+  String weatherCode;
+  String temperature;
 
   int httpCode = httpClient.GET();
   Serial.print("Send GET request to URL: ");
@@ -194,23 +207,49 @@ void getWeather(char* city,int *WeatherCode,int *Temperature){
     Serial.println(weatherJson);
     //解析Json
     deserializeJson(doc, weatherJson);
-    weatherCode = doc["result"]["now"]["code"];
-    temperature = doc["result"]["now"]["temperature"];
+    // weatherCode = doc["result"][0]["now"]["code"].as<String>();
+    // temperature = doc["result"][0]["now"]["temperature"].as<String>();
     //获取字符串： doc["result"]["week_4"].as<String>();
+    JsonObject results_0 = doc["results"][0];
+    const char* results_0_location_name = results_0["location"]["name"]; // "Beijing"
+    const char* results_0_location_country = results_0["location"]["country"]; // "CN"
+    
+    JsonObject results_0_now = results_0["now"];
+    const char* results_0_now_text = results_0_now["text"]; // "Clear"
+    const char* results_0_now_code = results_0_now["code"]; // "1"
+    const char* results_0_now_temperature = results_0_now["temperature"]; // "3"
+    
+    const char* results_0_last_update = results_0["last_update"]; // "2020-03-01T20:10:00+08:00"  
+  
+    String location_name_String = results_0["location"]["name"].as<String>();
+    int now_code_int = results_0_now["code"].as<int>();
+    int now_temperature_int = results_0_now["temperature"].as<int>();
+  
+    Serial.println(now_code_int);
+    Serial.println(now_temperature_int);
   } 
   else {//未获取，返回错误code
     Serial.println("Server Respose Code:");
     Serial.println(httpCode);
   }
 
-  Serial.println(weatherCode);
-  Serial.println(temperature);
+  // Serial.println(weatherCode);
+  // Serial.println(temperature);
 
-  *WeatherCode = weatherCode;
-  *Temperature = temperature;
+  // *WeatherCode = weatherCode;
+  // *Temperature = temperature;
 
   httpClient.end();
 }
+
+//在屏幕上显示时间
+void displayTime(){}
+
+//在屏幕上显示日期
+void displayData(){}
+
+//在屏幕上显示天气
+void displayWeather(){}
 
 //oled初始化
 void oledInit(){
